@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Kotoba Ciphers – Decode Anime Quotes</title>
+  <meta name="description" content="A word puzzle game where you decrypt hidden quotes from your favorite anime. Earn points, track your best times, and unlock achievements."/>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Cinzel:wght@400;600;700&family=Lato:wght@300;400&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --black: #0a0a0a;
+      --deep: #0f0d12;
+      --pink: #e879a0;
+      --pink-light: #f2a8c4;
+      --pink-glow: rgba(232, 121, 160, 0.18);
+      --pink-dim: rgba(232, 121, 160, 0.08);
+      --white: #f7f0f3;
+      --muted: rgba(247, 240, 243, 0.45);
+      --border: rgba(232, 121, 160, 0.2);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--black);
+      color: var(--white);
+      font-family: 'Lato', sans-serif;
+      font-weight: 300;
+      overflow-x: hidden;
+      cursor: default;
+    }
+
+    /* ── SAKURA PETAL CANVAS ── */
+    #sakura-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.35;
+    }
+
+    /* ── NOISE OVERLAY ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+      opacity: 0.03;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── GLOBAL SECTION WRAPPER ── */
+    .wrap {
+      position: relative;
+      z-index: 1;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    /* ── HERO ── */
+    #hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 6rem 2rem 4rem;
+      overflow: hidden;
+    }
+
+    /* radial glow behind hero */
+    #hero::after {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(232,121,160,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .icon-wrap {
+      position: relative;
+      margin-bottom: 2.5rem;
+      animation: floatIcon 6s ease-in-out infinite;
+    }
+
+    @keyframes floatIcon {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-12px); }
+    }
+
+    .icon-wrap img {
+      width: 130px;
+      height: 130px;
+      border-radius: 32px;
+      box-shadow:
+        0 0 0 1px var(--border),
+        0 0 40px rgba(232,121,160,0.25),
+        0 20px 60px rgba(0,0,0,0.6);
+    }
+
+    .icon-ring {
+      position: absolute;
+      inset: -14px;
+      border-radius: 46px;
+      border: 1px solid var(--border);
+      animation: ringPulse 3s ease-in-out infinite;
+    }
+
+    .icon-ring-2 {
+      position: absolute;
+      inset: -26px;
+      border-radius: 58px;
+      border: 1px solid rgba(232,121,160,0.08);
+      animation: ringPulse 3s ease-in-out infinite 0.5s;
+    }
+
+    @keyframes ringPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.03); }
+    }
+
+    .kana-accent {
+      font-family: 'Noto Serif JP', serif;
+      font-size: 0.85rem;
+      letter-spacing: 0.4em;
+      color: var(--pink);
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+      opacity: 0;
+      animation: fadeUp 0.8s ease forwards 0.2s;
+    }
+
+    h1 {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(2.4rem, 7vw, 4.2rem);
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      line-height: 1.1;
+      margin-bottom: 1.25rem;
+      opacity: 0;
+      animation: fadeUp 0.8s ease forwards 0.4s;
+    }
+
+    h1 span {
+      color: var(--pink);
+      text-shadow: 0 0 30px rgba(232,121,160,0.4);
+    }
+
+    .tagline {
+      font-size: clamp(1rem, 2.5vw, 1.2rem);
+      font-weight: 300;
+      color: var(--muted);
+      max-width: 480px;
+      line-height: 1.7;
+      margin-bottom: 3rem;
+      opacity: 0;
+      animation: fadeUp 0.8s ease forwards 0.6s;
+    }
+
+    .cta-group {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      opacity: 0;
+      animation: fadeUp 0.8s ease forwards 0.8s;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: var(--pink);
+      color: #0a0a0a;
+      font-family: 'Cinzel', serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      padding: 0.9rem 2rem;
+      border-radius: 4px;
+      text-decoration: none;
+      transition: all 0.25s;
+      box-shadow: 0 4px 24px rgba(232,121,160,0.3);
+    }
+
+    .btn-primary:hover {
+      background: var(--pink-light);
+      box-shadow: 0 6px 32px rgba(232,121,160,0.5);
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: transparent;
+      color: var(--pink);
+      font-family: 'Cinzel', serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      padding: 0.9rem 2rem;
+      border-radius: 4px;
+      text-decoration: none;
+      border: 1px solid var(--border);
+      transition: all 0.25s;
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--pink);
+      background: var(--pink-dim);
+      transform: translateY(-2px);
+    }
+
+    /* scroll indicator */
+    .scroll-hint {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.4rem;
+      color: var(--muted);
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      animation: fadeUp 1s ease forwards 1.2s, bobScroll 2s ease-in-out infinite 2s;
+      opacity: 0;
+    }
+
+    .scroll-hint svg {
+      width: 20px;
+      opacity: 0.5;
+    }
+
+    @keyframes bobScroll {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(6px); }
+    }
+
+    /* ── CIPHER DEMO ── */
+    #demo {
+      padding: 6rem 2rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .section-label {
+      font-family: 'Noto Serif JP', serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.3em;
+      color: var(--pink);
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    .section-title {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(1.5rem, 4vw, 2.2rem);
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 0.75rem;
+    }
+
+    .section-sub {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin-bottom: 3.5rem;
+      line-height: 1.7;
+    }
+
+    .cipher-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2.5rem;
+      max-width: 600px;
+      margin: 0 auto;
+      backdrop-filter: blur(8px);
+    }
+
+    .cipher-source {
+      font-family: 'Noto Serif JP', serif;
+      font-size: 0.75rem;
+      color: var(--pink);
+      letter-spacing: 0.2em;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+
+    .cipher-row {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .cipher-tile {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .tile-answer {
+      width: 44px;
+      height: 44px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      font-weight: 700;
+      font-family: 'Cinzel', serif;
+      transition: all 0.3s;
+      background: transparent;
+    }
+
+    .tile-answer.revealed {
+      border-color: var(--pink);
+      color: var(--pink);
+      background: var(--pink-dim);
+      box-shadow: 0 0 12px rgba(232,121,160,0.15);
+    }
+
+    .tile-answer.space {
+      border-color: transparent;
+      background: transparent;
+    }
+
+    .tile-encrypted {
+      width: 44px;
+      height: 26px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+    }
+
+    .tile-encrypted.space { background: transparent; }
+
+    .decrypt-btn {
+      display: block;
+      margin: 0 auto;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--pink);
+      font-family: 'Cinzel', serif;
+      font-size: 0.8rem;
+      letter-spacing: 0.1em;
+      padding: 0.6rem 1.6rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.25s;
+    }
+
+    .decrypt-btn:hover {
+      background: var(--pink-dim);
+      border-color: var(--pink);
+    }
+
+    /* ── FEATURES ── */
+    #features {
+      padding: 6rem 2rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.25rem;
+      margin-top: 3.5rem;
+    }
+
+    .feature-card {
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px;
+      padding: 1.75rem;
+      transition: all 0.3s;
+    }
+
+    .feature-card:hover {
+      border-color: var(--border);
+      background: var(--pink-dim);
+      transform: translateY(-4px);
+    }
+
+    .feature-icon {
+      font-size: 1.8rem;
+      margin-bottom: 1rem;
+    }
+
+    .feature-title {
+      font-family: 'Cinzel', serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+      color: var(--white);
+    }
+
+    .feature-desc {
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    /* ── DIVIDER ── */
+    .divider {
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--border), transparent);
+      margin: 0 2rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 3rem 2rem;
+      color: var(--muted);
+      font-size: 0.8rem;
+      letter-spacing: 0.05em;
+    }
+
+    footer a {
+      color: var(--pink);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s;
+    }
+
+    footer a:hover { border-color: var(--pink); }
+
+    footer .kana {
+      font-family: 'Noto Serif JP', serif;
+      font-size: 1.2rem;
+      color: rgba(232,121,160,0.3);
+      display: block;
+      margin-bottom: 0.75rem;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* scroll reveal */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 480px) {
+      .cipher-card { padding: 1.5rem 1rem; }
+      .tile-answer { width: 36px; height: 36px; font-size: 1.1rem; }
+      .tile-encrypted { width: 36px; }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="sakura-canvas"></canvas>
+
+<!-- ══════════ HERO ══════════ -->
+<section id="hero">
+  <div class="icon-wrap">
+    <div class="icon-ring-2"></div>
+    <div class="icon-ring"></div>
+    <img src="icon.png" alt="Kotoba Ciphers Icon"/>
+  </div>
+
+  <p class="kana-accent">言葉 &nbsp;·&nbsp; ことば</p>
+  <h1>Kotoba <span>Ciphers</span></h1>
+  <p class="tagline">Decrypt hidden quotes from your favourite anime. Decipher the cipher, reveal the words.</p>
+
+  <div class="cta-group">
+    <a href="#" class="btn-primary">
+      <!-- Google Play icon -->
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3.18 23.76c.3.17.65.2.97.1l11.4-11.4L12 9l-8.82 14.76zM20.7 10.2l-2.82-1.62-3.24 3.24 3.24 3.24 2.82-1.62c.84-.48.84-1.62 0-2.1v-.14zM3 1.14L15.3 13.44l-3.3-3.3L3.03.9c-.03.06-.03.12-.03.24zM4.15.1c-.33-.1-.67-.07-.97.1L15.54 11.4 12.3 8.16 4.15.1z"/></svg>
+      Get on Google Play
+    </a>
+    <a href="privacy-policy.html" class="btn-secondary">Privacy Policy</a>
+  </div>
+
+  <div class="scroll-hint">
+    <span>Scroll</span>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+  </div>
+</section>
+
+<!-- ══════════ DEMO ══════════ -->
+<section id="demo">
+  <div class="wrap">
+    <p class="section-label reveal">How it works</p>
+    <h2 class="section-title reveal">Every letter hides a secret</h2>
+    <p class="section-sub reveal">Each puzzle is an encrypted anime quote. Tap a cipher letter, guess its real counterpart, and slowly reveal the hidden message.</p>
+
+    <div class="cipher-card reveal">
+      <p class="cipher-source">— Naruto Uzumaki · Naruto</p>
+      <div class="cipher-row" id="cipher-display"></div>
+      <button class="decrypt-btn" id="decrypt-btn" onclick="toggleDecrypt()">✦ Reveal Answer</button>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══════════ FEATURES ══════════ -->
+<section id="features">
+  <div class="wrap">
+    <p class="section-label reveal">What's inside</p>
+    <h2 class="section-title reveal">Built for puzzle lovers</h2>
+
+    <div class="features-grid">
+      <div class="feature-card reveal">
+        <div class="feature-icon">🎌</div>
+        <div class="feature-title">Anime Quotes</div>
+        <div class="feature-desc">Carefully curated quotes from iconic series — each one a new puzzle to crack.</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">💡</div>
+        <div class="feature-title">Hint System</div>
+        <div class="feature-desc">Stuck? Use hints strategically to reveal a letter and keep the momentum going.</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">📊</div>
+        <div class="feature-title">Track Progress</div>
+        <div class="feature-desc">Points, completion rates, and best times — watch yourself improve puzzle by puzzle.</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">🌐</div>
+        <div class="feature-title">Multilingual</div>
+        <div class="feature-desc">Play in multiple languages. Quotes are available in both English and Japanese.</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">📶</div>
+        <div class="feature-title">Offline Ready</div>
+        <div class="feature-desc">No connection needed. Play anywhere, anytime — puzzles are stored on your device.</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">🏆</div>
+        <div class="feature-title">Achievements</div>
+        <div class="feature-desc">Earn achievements as you decode more quotes and master harder difficulties.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══════════ FOOTER ══════════ -->
+<footer>
+  <span class="kana">言葉</span>
+  <p>
+    <a href="privacy-policy.html">Privacy Policy</a>
+    &nbsp;·&nbsp;
+    <a href="https://github.com/RyoSaeba35" target="_blank" rel="noopener">RyoSaeba35</a>
+  </p>
+  <p style="margin-top:0.75rem;">© 2025 Kotoba Ciphers. All rights reserved.</p>
+</footer>
+
+<script>
+// ── SAKURA PETALS ──
+const canvas = document.getElementById('sakura-canvas');
+const ctx = canvas.getContext('2d');
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+const PETAL_COUNT = 28;
+const petals = Array.from({ length: PETAL_COUNT }, () => ({
+  x: Math.random() * window.innerWidth,
+  y: Math.random() * window.innerHeight,
+  r: 3 + Math.random() * 5,
+  speed: 0.4 + Math.random() * 0.8,
+  drift: (Math.random() - 0.5) * 0.4,
+  rot: Math.random() * Math.PI * 2,
+  rotSpeed: (Math.random() - 0.5) * 0.02,
+  opacity: 0.3 + Math.random() * 0.5,
+}));
+
+function drawPetal(p) {
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  ctx.rotate(p.rot);
+  ctx.globalAlpha = p.opacity;
+  ctx.fillStyle = '#e879a0';
+  ctx.beginPath();
+  ctx.ellipse(0, 0, p.r, p.r * 1.6, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // inner vein
+  ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+  ctx.lineWidth = 0.5;
+  ctx.beginPath();
+  ctx.moveTo(0, -p.r * 1.4);
+  ctx.lineTo(0, p.r * 1.4);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function animatePetals() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  for (const p of petals) {
+    drawPetal(p);
+    p.y += p.speed;
+    p.x += p.drift;
+    p.rot += p.rotSpeed;
+    if (p.y > canvas.height + 20) {
+      p.y = -20;
+      p.x = Math.random() * canvas.width;
+    }
+    if (p.x > canvas.width + 20) p.x = -20;
+    if (p.x < -20) p.x = canvas.width + 20;
+  }
+  requestAnimationFrame(animatePetals);
+}
+animatePetals();
+
+// ── CIPHER DEMO ──
+const quote = [
+  { enc: 'X', dec: 'I' },
+  { enc: ' ', dec: ' ' },
+  { enc: 'Y', dec: 'W' },
+  { enc: 'Z', dec: 'I' },
+  { enc: 'X', dec: 'L' },
+  { enc: 'Q', dec: 'L' },
+  { enc: ' ', dec: ' ' },
+  { enc: 'P', dec: 'N' },
+  { enc: 'M', dec: 'E' },
+  { enc: 'V', dec: 'V' },
+  { enc: 'M', dec: 'E' },
+  { enc: 'R', dec: 'R' },
+  { enc: ' ', dec: ' ' },
+  { enc: 'G', dec: 'G' },
+  { enc: 'X', dec: 'I' },
+  { enc: 'V', dec: 'V' },
+  { enc: 'M', dec: 'E' },
+  { enc: ' ', dec: ' ' },
+  { enc: 'Z', dec: 'U' },
+  { enc: 'P', dec: 'P' },
+];
+
+let revealed = false;
+const display = document.getElementById('cipher-display');
+
+function renderCipher(show) {
+  display.innerHTML = '';
+  for (const t of quote) {
+    const tile = document.createElement('div');
+    tile.className = 'cipher-tile';
+    if (t.enc === ' ') {
+      tile.innerHTML = `<div class="tile-answer space"></div><div class="tile-encrypted space"></div>`;
+    } else {
+      tile.innerHTML = `
+        <div class="tile-answer${show ? ' revealed' : ''}">${show ? t.dec : ''}</div>
+        <div class="tile-encrypted">${t.enc}</div>`;
+    }
+    display.appendChild(tile);
+  }
+}
+
+function toggleDecrypt() {
+  revealed = !revealed;
+  renderCipher(revealed);
+  document.getElementById('decrypt-btn').textContent = revealed ? '✦ Hide Answer' : '✦ Reveal Answer';
+}
+
+renderCipher(false);
+
+// ── SCROLL REVEAL ──
+const observer = new IntersectionObserver(entries => {
+  for (const e of entries) {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+      observer.unobserve(e.target);
+    }
+  }
+}, { threshold: 0.15 });
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
